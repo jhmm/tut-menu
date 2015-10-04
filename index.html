@@ -1,0 +1,164 @@
+<html>
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<title>TUT Menus</title>
+</head>
+<body>
+	<div class="container">
+		<ul class="nav nav-pills" id="dateSelector"></ul>
+
+		<div class="row">
+			<div id="menuPages"></div>
+		</div>
+
+	</div>
+
+	<script>
+	var newDate = '';
+
+	function setCurrentMenu(date)
+	{
+		$('.menuPage').hide();
+		$('#menu-'+date).show();
+
+
+		$('.tabButton').removeClass('active');
+		$('#'+date).addClass('active');
+	}
+
+	function getMenus()
+	{
+		$("#dateSelector").html('');
+		$("#menuPages").html('');
+
+		
+
+		$.getJSON('menus.json', function(data)
+		{
+			$.each(data, function(idx, date)
+			{
+				createDate(date.year, date.month, date.day);
+				
+				var dateDashSeparated = date.year+'-'+date.month+'-'+date.day;
+				$.each(date.restaurants, function(idx, restaurant)
+				{
+					addRestaurant(restaurant, dateDashSeparated);
+				});
+
+  				
+
+			});
+			
+			var hash = window.location.hash;
+			if(hash && hash != "")
+			{
+				hash = hash.substring(1);
+				setCurrentMenu(hash);
+				$(".menuPage").hide();
+				$("#menu-"+hash).show();
+			}
+		});		
+	}
+
+	function addRestaurant(restaurant, dateDashSeparated)
+	{
+		var restaurantDiv = '<div style="width: 32%; margin: 6px; float: left;">';
+	//var restaurantDiv = '<div class="restaurant col-sm-4">';
+
+		restaurantDiv += '<h3>'+restaurant.name+'</h3>';
+
+		$.each(restaurant.mealOptions, function(idx, mealOption)
+		{
+			restaurantDiv += '<div class="col-xs-12">'+getMealOption(mealOption)+'</div>';
+		});
+
+		restaurantDiv += '</div>';
+	
+		$('#menu-'+dateDashSeparated).append(restaurantDiv);
+	}
+
+	function getMealOption(mealOption)
+	{
+		//alert(JSON.stringify(mealOption));
+		var mealOptionHtml = '<br />';
+
+		if(mealOption.name != '' && mealOption.name != 'undefined')
+		{
+			mealOptionHtml += '<h4>'+mealOption.name+'</h4>';
+		}
+
+		var validMenuItemCount = 0;
+		$.each(mealOption.menuItems, function(idx, menuItem)
+		{
+			if(menuItem.menuItemName && menuItem.menuItemName != 'undefined' && menuItem.menuItemName != '.' && menuItem.menuItemName != '. ()')
+			{
+				mealOptionHtml += menuItem.menuItemName+'<br />';
+				validMenuItemCount++;
+			}
+		});
+
+		if(validMenuItemCount == 0)
+		{
+			return '';
+		}
+
+		return mealOptionHtml;
+	}
+
+	function createDate(year, month, day)
+	{
+		var dayStr = day+'.'+month+'.'+year;
+		var dateDashSeparated = year+'-'+month+'-'+day;
+
+		var activeClass = '';
+
+		$("#dateSelector").append('<li role="presentation" class="tabButton'+activeClass+'" id="'+dateDashSeparated+'"><a href="#'+dateDashSeparated+'">'+dayStr+'</a></li>');
+
+		$("#menuPages").append('<div class="menuPage" id="menu-'+dateDashSeparated+'" style="display: none;"></div>');
+
+
+		var today = new Date();
+		var curDay = today.getDate();
+		var curMonth = today.getMonth()+1;
+		var curYear = today.getFullYear();
+
+		if(curDay < 10)
+		{
+    		curDay = '0' + curDay;
+		} 
+
+		if(curMonth < 10)
+		{
+    		curMonth = '0' + curMonth;
+		}
+
+		if(year == curYear && month == curMonth && day == curDay)
+		{
+			setCurrentMenu(dateDashSeparated);
+		}
+	}
+
+	$(function() {
+		getMenus();
+
+		$(document).on('click', '.tabButton', function()
+		{
+			newDate = $(this).attr('id');
+
+			$('#menuPages').fadeOut('fast', function()
+			{
+				setCurrentMenu(newDate);
+				$('#menuPages').fadeIn('fast');
+			});
+		});
+	});
+	</script>
+
+</body>
+</html>
